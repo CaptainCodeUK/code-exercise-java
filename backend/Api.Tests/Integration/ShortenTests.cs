@@ -14,7 +14,7 @@ public class ShortenTests(WebApplicationFactory<Program> factory)
     [Fact]
     public async Task PostShorten_ValidUrl_Returns201WithShortUrl()
     {
-        var response = await _client.PostAsJsonAsync("/shorten", new
+        var response = await _client.PostAsJsonAsync("/urlshortener/shorten", new
         {
             fullUrl = "https://example.com/very/long/url"
         });
@@ -32,7 +32,7 @@ public class ShortenTests(WebApplicationFactory<Program> factory)
     {
         var alias = "my-custom-alias";
 
-        var response = await _client.PostAsJsonAsync("/shorten", new
+        var response = await _client.PostAsJsonAsync("/urlshortener/shorten", new
         {
             fullUrl = "https://example.com/very/long/url",
             customAlias = alias
@@ -52,8 +52,8 @@ public class ShortenTests(WebApplicationFactory<Program> factory)
         var alias = "duplicate-alias";
         var payload = new { fullUrl = "https://example.com/url", customAlias = alias };
 
-        await _client.PostAsJsonAsync("/shorten", payload);
-        var response = await _client.PostAsJsonAsync("/shorten", payload);
+        await _client.PostAsJsonAsync("/urlshortener/shorten", payload);
+        var response = await _client.PostAsJsonAsync("/urlshortener/shorten", payload);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
@@ -62,7 +62,7 @@ public class ShortenTests(WebApplicationFactory<Program> factory)
     [Fact]
     public async Task PostShorten_MissingFullUrl_Returns400()
     {
-        var response = await _client.PostAsJsonAsync("/shorten", new { });
+        var response = await _client.PostAsJsonAsync("/urlshortener/shorten", new { });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }

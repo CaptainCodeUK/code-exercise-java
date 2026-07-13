@@ -67,8 +67,7 @@ public class UrlShortenerControllerTests
         _repo.GetByAliasAsync("foo").Returns(new ShortenedUrl
         {
             Alias = "foo",
-            FullUrl = "https://example.com/target",
-            ShortUrl = "https://localhost/foo"
+            FullUrl = "https://example.com/target"
         });
 
         var result = await _sut.RedirectToUrl("foo");
@@ -117,7 +116,7 @@ public class UrlShortenerControllerTests
     {
         _repo.GetAllAsync().Returns(new List<ShortenedUrl>
         {
-            new() { Alias = "a", FullUrl = "https://a.com", ShortUrl = "https://localhost/a" }
+            new() { Alias = "a", FullUrl = "https://a.com" }
         });
 
         var result = await _sut.GetAll();

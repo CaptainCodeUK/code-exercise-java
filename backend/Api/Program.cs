@@ -2,6 +2,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
+builder.Services.AddScoped<Api.Data.IUrlRepository, Api.Data.UrlRepository>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("DevCors", policy =>
