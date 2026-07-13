@@ -23,7 +23,7 @@ public class UrlShortenerControllerTests
     {
         _repo.AliasExistsAsync(Arg.Any<string>()).Returns(false);
 
-        var result = await _sut.Shorten(new ShortenRequest("https://example.com/long", null));
+        var result = await _sut.Shorten(new ShortenRequest("https://example.com/this/is/long", null));
 
         var created = Assert.IsType<CreatedResult>(result);
         Assert.NotNull(created.Value);
@@ -34,10 +34,10 @@ public class UrlShortenerControllerTests
     {
         _repo.AliasExistsAsync("my-alias").Returns(false);
 
-        var result = await _sut.Shorten(new ShortenRequest("https://example.com/long", "my-alias"));
+        var result = await _sut.Shorten(new ShortenRequest("https://example.com/this/is/long", "my-alias"));
 
         var created = Assert.IsType<CreatedResult>(result);
-        var shortUrl = created.Value?.GetType().GetProperty("shortUrl")?.GetValue(created.Value)?.ToString();
+        var shortUrl = Assert.IsType<ShortenResponse>(created.Value).ShortUrl;
         Assert.Contains("my-alias", shortUrl);
     }
 
@@ -46,7 +46,7 @@ public class UrlShortenerControllerTests
     {
         _repo.AliasExistsAsync("taken").Returns(true);
 
-        var result = await _sut.Shorten(new ShortenRequest("https://example.com/long", "taken"));
+        var result = await _sut.Shorten(new ShortenRequest("https://example.com/this/is/long", "taken"));
 
         Assert.IsType<BadRequestObjectResult>(result);
     }
