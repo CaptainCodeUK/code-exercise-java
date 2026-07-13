@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 
-namespace Api.Tests;
+namespace Api.Tests.Integration;
 
 public class ShortenTests(WebApplicationFactory<Program> factory)
     : IClassFixture<WebApplicationFactory<Program>>

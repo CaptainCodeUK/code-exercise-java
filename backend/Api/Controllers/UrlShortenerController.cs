@@ -1,45 +1,46 @@
+using Api.Data;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Api.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class UrlShortenerController : ControllerBase
+public class UrlShortenerController(IUrlRepository repository) : ControllerBase
 {
-    // POST /shorten
+    // POST /urlshortener/shorten
     // 201: { shortUrl }
     // 400: invalid input or alias already taken
     [HttpPost("shorten")]
-    public IActionResult Shorten([FromBody] ShortenRequest request)
+    public async Task<IActionResult> Shorten([FromBody] ShortenRequest request)
     {
         throw new NotImplementedException();
     }
 
-    // GET /{alias}
+    // GET /urlshortener/{alias}
     // 302: redirect to full URL
     // 404: alias not found
     [HttpGet("{alias}")]
-    public IActionResult RedirectToUrl(string alias)
+    public async Task<IActionResult> RedirectToUrl(string alias)
     {
         throw new NotImplementedException();
     }
 
-    // DELETE /{alias}
+    // DELETE /urlshortener/{alias}
     // 204: deleted
     // 404: alias not found
     [HttpDelete("{alias}")]
-    public IActionResult Delete(string alias)
+    public async Task<IActionResult> Delete(string alias)
     {
         throw new NotImplementedException();
     }
 
-    // GET /urls
+    // GET /urlshortener/urls
     // 200: array of { alias, fullUrl, shortUrl }
     [HttpGet("urls")]
-    public IActionResult GetAll()
+    public async Task<IActionResult> GetAll()
     {
         throw new NotImplementedException();
     }
 }
 
-public record ShortenRequest(string FullUrl, string? CustomAlias);
+public record ShortenRequest(string? FullUrl, string? CustomAlias);

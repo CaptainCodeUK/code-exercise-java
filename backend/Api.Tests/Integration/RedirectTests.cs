@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 
-namespace Api.Tests;
+namespace Api.Tests.Integration;
 
 public class RedirectTests(WebApplicationFactory<Program> factory)
     : IClassFixture<WebApplicationFactory<Program>>
@@ -14,7 +14,6 @@ public class RedirectTests(WebApplicationFactory<Program> factory)
     [Fact]
     public async Task GetAlias_ExistingAlias_Returns302()
     {
-        // Create alias first
         var alias = "redirect-alias";
         await _client.PostAsJsonAsync("/shorten", new
         {
