@@ -4,8 +4,8 @@ using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Api.Tests.Integration;
 
-public class ListUrlsTests(WebApplicationFactory<Program> factory)
-    : IClassFixture<WebApplicationFactory<Program>>
+public class ListUrlsTests(TestWebApplicationFactory factory)
+    : IClassFixture<TestWebApplicationFactory>
 {
     private readonly HttpClient _client = factory.CreateClient(
         new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });

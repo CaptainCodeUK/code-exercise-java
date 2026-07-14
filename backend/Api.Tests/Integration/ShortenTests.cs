@@ -4,8 +4,8 @@ using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Api.Tests.Integration;
 
-public class ShortenTests(WebApplicationFactory<Program> factory)
-    : IClassFixture<WebApplicationFactory<Program>>
+public class ShortenTests(TestWebApplicationFactory factory)
+    : IClassFixture<TestWebApplicationFactory>
 {
     private readonly HttpClient _client = factory.CreateClient(
         new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
