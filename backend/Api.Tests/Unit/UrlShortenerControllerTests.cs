@@ -143,7 +143,7 @@ public class UrlShortenerControllerTests
     [Fact]
     public async Task GetAll_Returns200WithList()
     {
-        _repo.GetAllAsync().Returns(new List<ShortenedUrl>
+        _repo.GetAllAsync().Returns(new List<ShortenedUrlResult>
         {
             new() { Alias = "a", FullUrl = "https://example.com/very/long/url/a", ShortUrl = "https://short.ly/a" },
             new() { Alias = "b", FullUrl = "https://example.com/very/long/url/b", ShortUrl = "https://short.ly/b" },
