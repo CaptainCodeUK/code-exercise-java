@@ -77,7 +77,23 @@ public partial class UrlShortenerController(IUrlRepository repository) : Control
     [HttpGet("urls")]
     public async Task<IActionResult> GetAll()
     {
-        throw new NotImplementedException();
+        var request = HttpContext?.Request;
+        var shortUrlPrefix = request is null
+            ? string.Empty
+            : $"{request.Scheme}://{request.Host}{request.PathBase}".TrimEnd('/');
+
+        var urls = (await repository.GetAllAsync())
+            .Select(url => new ShortenedUrlResult
+            {
+                Alias = url.Alias,
+                FullUrl = url.FullUrl,
+                ShortUrl = string.IsNullOrWhiteSpace(shortUrlPrefix)
+                    ? $"/{url.Alias}"
+                    : $"{shortUrlPrefix}/{url.Alias}"
+            })
+            .ToList();
+
+        return Ok(urls);
     }
 }
 

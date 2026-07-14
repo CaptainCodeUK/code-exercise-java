@@ -14,7 +14,7 @@ public class ListUrlsTests(WebApplicationFactory<Program> factory)
     [Fact]
     public async Task GetUrls_Returns200WithArray()
     {
-        var response = await _client.GetAsync("/urls");
+        var response = await _client.GetAsync("/urlshortener/urls");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -29,13 +29,13 @@ public class ListUrlsTests(WebApplicationFactory<Program> factory)
         var alias = "list-alias";
         var fullUrl = "https://example.com/list-test";
 
-        await _client.PostAsJsonAsync("/shorten", new
+        await _client.PostAsJsonAsync("/urlshortener/shorten", new
         {
             fullUrl,
             customAlias = alias
         });
 
-        var response = await _client.GetAsync("/urls");
+        var response = await _client.GetAsync("/urlshortener/urls");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         var body = await response.Content.ReadFromJsonAsync<UrlEntry[]>();

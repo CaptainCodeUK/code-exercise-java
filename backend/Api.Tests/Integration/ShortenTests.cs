@@ -10,6 +10,8 @@ public class ShortenTests(WebApplicationFactory<Program> factory)
     private readonly HttpClient _client = factory.CreateClient(
         new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
 
+    private static string NewAlias(string prefix) => $"{prefix}-{Guid.NewGuid():N}";
+
     // POST /shorten — valid fullUrl → 201 with shortUrl
     [Fact]
     public async Task PostShorten_ValidUrl_Returns201WithShortUrl()
@@ -30,7 +32,7 @@ public class ShortenTests(WebApplicationFactory<Program> factory)
     [Fact]
     public async Task PostShorten_WithCustomAlias_Returns201ContainingAlias()
     {
-        var alias = "my-custom-alias";
+        var alias = NewAlias("my-custom-alias");
 
         var response = await _client.PostAsJsonAsync("/urlshortener/shorten", new
         {

@@ -31,9 +31,11 @@ public class UrlRepository(string connectionString) : IUrlRepository
         throw new NotImplementedException();
     }
 
-    public Task<IEnumerable<ShortenedUrl>> GetAllAsync()
+    public async Task<IEnumerable<ShortenedUrl>> GetAllAsync()
     {
-        throw new NotImplementedException();
+        using var conn = Connect();
+        return await conn.QueryAsync<ShortenedUrl>(
+            "SELECT alias, full_url AS FullUrl FROM urls ORDER BY created_at ASC");
     }
 
     public Task<ShortenedUrl?> GetByAliasAsync(string alias)
