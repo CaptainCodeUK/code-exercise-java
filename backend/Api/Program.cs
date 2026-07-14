@@ -1,8 +1,33 @@
+using Api.Data;
+using Dapper;
+using DbUp;
+using Microsoft.Data.Sqlite;
+
 var builder = WebApplication.CreateBuilder(args);
+
+var connectionStringBuilder = new SqliteConnectionStringBuilder(builder.Configuration.GetConnectionString("Default")!);
+
+if (!Path.IsPathRooted(connectionStringBuilder.DataSource))
+{
+    connectionStringBuilder.DataSource = Path.GetFullPath(
+        Path.Combine(AppContext.BaseDirectory, connectionStringBuilder.DataSource));
+}
+
+var connectionString = connectionStringBuilder.ToString();
+
+// Run DbUp migrations on startup
+var upgrader = DeployChanges.To
+    .SqliteDatabase(connectionString)
+    .WithScriptsEmbeddedInAssembly(typeof(Program).Assembly)
+    .LogToConsole()
+    .Build();
+
+var result = upgrader.PerformUpgrade();
+if (!result.Successful)
+    throw new Exception("Database migration failed", result.Error);
 
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
-builder.Services.AddScoped<Api.Data.IUrlRepository, Api.Data.UrlRepository>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("DevCors", policy =>
@@ -10,6 +35,8 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader()
               .AllowAnyMethod());
 });
+
+builder.Services.AddSingleton<IUrlRepository>(_ => new UrlRepository(connectionString));
 
 var app = builder.Build();
 

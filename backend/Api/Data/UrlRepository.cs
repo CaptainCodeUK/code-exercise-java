@@ -1,21 +1,29 @@
 ﻿using Api.Models;
+using Dapper;
+using Microsoft.Data.Sqlite;
 
 namespace Api.Data;
 
-public class UrlRepository : IUrlRepository
+public class UrlRepository(string connectionString) : IUrlRepository
 {
-    public Task AddAsync(ShortenedUrl url)
+    private SqliteConnection Connect() => new(connectionString);
+
+    public async Task AddAsync(ShortenedUrl url)
     {
-        // This method should add the ShortenedUrl to the database.
-        return Task.CompletedTask;
+        using var conn = Connect();
+        await conn.ExecuteAsync(
+            "INSERT INTO urls (alias, full_url) VALUES (@Alias, @FullUrl)",
+            url);
     }
 
-    public Task<bool> AliasExistsAsync(string alias)
+    public async Task<bool> AliasExistsAsync(string alias)
     {
-        // This method should check if the alias already exists in the database.
-        // We have no database yet, so for now, we can just return false to indicate that the alias does not exist.
+        using var conn = Connect();
+        var count = await conn.ExecuteScalarAsync<int>(
+            "SELECT COUNT(1) FROM urls WHERE alias = @alias",
+            new { alias });
 
-        return Task.FromResult(false);
+        return count > 0;
     }
 
     public Task<bool> DeleteAsync(string alias)
