@@ -60,7 +60,7 @@ public partial class UrlShortenerController(IUrlRepository repository) : Control
     // 404: alias not found
     [HttpGet("{alias}")]
     [HttpGet("/{alias}")]
-    [ProducesResponseType(typeof(string), StatusCodes.Status302Found)]
+    [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RedirectToUrl(string alias)
     {
@@ -78,6 +78,8 @@ public partial class UrlShortenerController(IUrlRepository repository) : Control
     // 404: alias not found
     [HttpDelete("{alias}")]
     [HttpDelete("/{alias}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(string alias)
     {
         if (string.IsNullOrWhiteSpace(alias) || !await repository.AliasExistsAsync(alias))
@@ -98,6 +100,9 @@ public partial class UrlShortenerController(IUrlRepository repository) : Control
     // GET /urlshortener/urls
     // 200: array of { alias, fullUrl, shortUrl }
     [HttpGet("urls")]
+    [HttpGet("/urls")]
+    [Produces("application/json")]
+    [ProducesResponseType(typeof(IEnumerable<ShortenedUrlResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll()
     {
         var request = HttpContext?.Request;
@@ -106,7 +111,7 @@ public partial class UrlShortenerController(IUrlRepository repository) : Control
             : $"{request.Scheme}://{request.Host}{request.PathBase}".TrimEnd('/');
 
         var urls = (await repository.GetAllAsync())
-            .Select(url => new ShortenedUrlResult
+            .Select(url => new ShortenedUrlResponse
             {
                 Alias = url.Alias,
                 FullUrl = url.FullUrl,
