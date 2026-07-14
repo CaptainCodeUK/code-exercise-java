@@ -45,6 +45,10 @@ public class UrlRepository(string connectionString) : IUrlRepository
 
     public Task<ShortenedUrl?> GetByAliasAsync(string alias)
     {
-        throw new NotImplementedException();
+        using var conn = Connect();
+
+        return conn.QuerySingleOrDefaultAsync<ShortenedUrl>(
+            "SELECT alias, full_url AS FullUrl FROM urls WHERE alias = @alias",
+            new { alias });
     }
 }

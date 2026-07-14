@@ -60,9 +60,17 @@ public partial class UrlShortenerController(IUrlRepository repository) : Control
     // 404: alias not found
     [HttpGet("{alias}")]
     [HttpGet("/{alias}")]
+    [ProducesResponseType(typeof(string), StatusCodes.Status302Found)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RedirectToUrl(string alias)
     {
-        throw new NotImplementedException();
+        var url = await repository.GetByAliasAsync(alias);
+        if (url is null)
+        {
+            return NotFound();
+        }
+
+        return Redirect(url.FullUrl);
     }
 
     // DELETE /urlshortener/{alias}
