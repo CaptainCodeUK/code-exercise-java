@@ -26,9 +26,14 @@ public class UrlRepository(string connectionString) : IUrlRepository
         return count > 0;
     }
 
-    public Task<bool> DeleteAsync(string alias)
+    public async Task<bool> DeleteAsync(string alias)
     {
-        throw new NotImplementedException();
+        using var conn = Connect();
+        var affectedRows = await conn.ExecuteAsync(
+            "DELETE FROM urls WHERE alias = @alias",
+            new { alias });
+
+        return affectedRows > 0;
     }
 
     public async Task<IEnumerable<ShortenedUrl>> GetAllAsync()

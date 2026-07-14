@@ -119,6 +119,7 @@ public class UrlShortenerControllerTests
     [Fact]
     public async Task Delete_ExistingAlias_Returns204()
     {
+        _repo.AliasExistsAsync("bar").Returns(true);
         _repo.DeleteAsync("bar").Returns(true);
 
         var result = await _sut.Delete("bar");
@@ -129,6 +130,7 @@ public class UrlShortenerControllerTests
     [Fact]
     public async Task Delete_UnknownAlias_Returns404()
     {
+        _repo.AliasExistsAsync("ghost").Returns(false);
         _repo.DeleteAsync("ghost").Returns(false);
 
         var result = await _sut.Delete("ghost");
