@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   deleteShortenedUrl,
   findShortenedUrl,
@@ -7,11 +7,15 @@ import {
   shortenUrl,
 } from './lib/urlShortenerApi'
 import ShortenerPanel from './components/ShortenerPanel'
+import RouteErrorMessage from './components/RouteErrorMessage'
+import RouteNotFoundMessage from './components/RouteNotFoundMessage'
 import SavedUrlsList from './components/SavedUrlsList'
 
 function App() {
   const fullUrlValidationMessage = 'Enter a full URL, including https://.'
   const pathname = window.location.pathname
+  const openShortenerButtonRef = useRef(null)
+  const shortenerDialogRef = useRef(null)
   const [fullUrl, setFullUrl] = useState('')
   const [customAlias, setCustomAlias] = useState('')
   const [isShortenerOpen, setIsShortenerOpen] = useState(false)
@@ -26,6 +30,7 @@ function App() {
   const [deletingAlias, setDeletingAlias] = useState('')
   const [routeStatus, setRouteStatus] = useState('checking')
   const [missingAlias, setMissingAlias] = useState('')
+  const [routeError, setRouteError] = useState('')
 
   const statusLabels = {
     idle: 'Ready',
@@ -63,7 +68,7 @@ function App() {
 
     function handleKeyDown(event) {
       if (event.key === 'Escape') {
-        setIsShortenerOpen(false)
+        handleCloseShortener()
       }
     }
 
@@ -72,6 +77,59 @@ function App() {
     return () => {
       document.body.style.overflow = previousOverflow
       document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isShortenerOpen])
+
+  useEffect(() => {
+    if (!isShortenerOpen) {
+      openShortenerButtonRef.current?.focus()
+      return undefined
+    }
+
+    const dialog = shortenerDialogRef.current
+
+    if (!dialog) {
+      return undefined
+    }
+
+    const focusableSelector =
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+
+    function getFocusableElements() {
+      return Array.from(dialog.querySelectorAll(focusableSelector)).filter(
+        (element) => element instanceof HTMLElement && element.tabIndex !== -1,
+      )
+    }
+
+    function handleKeyDown(event) {
+      if (event.key !== 'Tab') {
+        return
+      }
+
+      const focusableElements = getFocusableElements()
+
+      if (focusableElements.length === 0) {
+        event.preventDefault()
+        dialog.focus()
+        return
+      }
+
+      const firstFocusableElement = focusableElements[0]
+      const lastFocusableElement = focusableElements[focusableElements.length - 1]
+
+      if (event.shiftKey && document.activeElement === firstFocusableElement) {
+        event.preventDefault()
+        lastFocusableElement.focus()
+      } else if (!event.shiftKey && document.activeElement === lastFocusableElement) {
+        event.preventDefault()
+        firstFocusableElement.focus()
+      }
+    }
+
+    dialog.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      dialog.removeEventListener('keydown', handleKeyDown)
     }
   }, [isShortenerOpen])
 
@@ -92,6 +150,7 @@ function App() {
 
     if (normalizedPath === '/') {
       setRouteStatus('home')
+      setRouteError('')
       return undefined
     }
 
@@ -99,6 +158,7 @@ function App() {
 
     if (pathSegments.length !== 1) {
       setMissingAlias(pathSegments.join('/'))
+      setRouteError('')
       setRouteStatus('not-found')
       return undefined
     }
@@ -108,6 +168,7 @@ function App() {
 
     setRouteStatus('redirecting')
     setMissingAlias('')
+    setRouteError('')
 
     async function resolveAlias() {
       try {
@@ -127,8 +188,12 @@ function App() {
           return
         }
 
-        setMissingAlias(alias)
-        setRouteStatus('not-found')
+        setRouteError(
+          resolveError instanceof Error
+            ? resolveError.message
+            : 'Unable to check the requested short URL right now.',
+        )
+        setRouteStatus('error')
       }
     }
 
@@ -187,6 +252,20 @@ function App() {
         loadError instanceof Error ? loadError.message : 'Unable to load saved URLs right now.',
       )
     }
+  }
+
+  function resetShortenerState() {
+    setFullUrl('')
+    setCustomAlias('')
+    setShortUrl('')
+    setError('')
+    setStatus('idle')
+    setCopyState('Copy short URL')
+  }
+
+  function handleCloseShortener() {
+    resetShortenerState()
+    setIsShortenerOpen(false)
   }
 
   async function handleSubmit(event) {
@@ -295,28 +374,11 @@ function App() {
   }
 
   if (routeStatus === 'not-found') {
-    return (
-      <main className="min-vh-100 bg-body-tertiary d-flex align-items-center justify-content-center">
-        <section className="container py-5">
-          <div className="row justify-content-center">
-            <div className="col-12 col-md-8 col-lg-6">
-              <div className="card border-0 shadow-sm">
-                <div className="card-body p-4 p-lg-5 text-center">
-                  <span className="badge text-bg-danger text-uppercase mb-3">404 Not Found</span>
-                  <h1 className="display-6 fw-semibold mb-3">That short URL does not exist.</h1>
-                  <p className="text-body-secondary mb-4">
-                    We could not find a shortened link for {missingAlias ? <strong>/{missingAlias}</strong> : 'this path'}.
-                  </p>
-                  <a className="btn btn-primary btn-lg" href="/">
-                    Return to the home page
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      </main>
-    )
+    return <RouteNotFoundMessage alias={missingAlias} />
+  }
+
+  if (routeStatus === 'error') {
+    return <RouteErrorMessage message={routeError} alias={missingAlias} />
   }
 
   return (
@@ -329,7 +391,12 @@ function App() {
             <p className="lead text-body-secondary mb-0">Review existing shortened links and create a new alias when needed.</p>
           </div>
 
-          <button type="button" className="btn btn-primary btn-lg" onClick={() => setIsShortenerOpen(true)}>
+          <button
+            ref={openShortenerButtonRef}
+            type="button"
+            className="btn btn-primary btn-lg"
+            onClick={() => setIsShortenerOpen(true)}
+          >
             Create new alias
           </button>
         </section>
@@ -349,7 +416,7 @@ function App() {
         <div
           className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-3"
           style={{ zIndex: 1080 }}
-          onClick={() => setIsShortenerOpen(false)}
+          onClick={handleCloseShortener}
           role="presentation"
         >
           <div className="position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-50" aria-hidden="true" />
@@ -361,6 +428,8 @@ function App() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="create-alias-title"
+            ref={shortenerDialogRef}
+            tabIndex={-1}
           >
             <ShortenerPanel
               status={status}
@@ -372,18 +441,12 @@ function App() {
               customAlias={customAlias}
               onCustomAliasChange={setCustomAlias}
               onSubmit={handleSubmit}
-              onClear={() => {
-                setFullUrl('')
-                setCustomAlias('')
-                setShortUrl('')
-                setError('')
-                setStatus('idle')
-              }}
+              onClear={resetShortenerState}
               error={error}
               shortUrl={shortUrl}
               copyState={copyState}
               onCopyShortUrl={handleCopy}
-              onClose={() => setIsShortenerOpen(false)}
+              onClose={handleCloseShortener}
               className="mb-0 shadow-lg"
               titleId="create-alias-title"
             />

@@ -1,3 +1,5 @@
+import { useEffect, useRef } from 'react'
+
 export default function ShortenerPanel({
   status,
   statusLabels,
@@ -17,6 +19,12 @@ export default function ShortenerPanel({
   className = '',
   titleId,
 }) {
+  const fullUrlInputRef = useRef(null)
+
+  useEffect(() => {
+    fullUrlInputRef.current?.focus()
+  }, [])
+
   return (
     <section className={`card border-0 shadow-sm ${className}`.trim()} aria-labelledby={titleId}>
       <div className="card-body p-4 p-lg-5">
@@ -43,6 +51,7 @@ export default function ShortenerPanel({
                   Full URL
                 </label>
                 <input
+                  ref={fullUrlInputRef}
                   id="fullUrl"
                   name="fullUrl"
                   type="url"
