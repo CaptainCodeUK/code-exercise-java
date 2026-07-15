@@ -15,13 +15,13 @@ public class DeleteTests(TestWebApplicationFactory factory)
     public async Task DeleteAlias_ExistingAlias_Returns204()
     {
         var alias = "delete-me";
-        await _client.PostAsJsonAsync("/shorten", new
+        await _client.PostAsJsonAsync("/urlshortener/shorten", new
         {
             fullUrl = "https://example.com/to-delete",
             customAlias = alias
         });
 
-        var response = await _client.DeleteAsync($"/{alias}");
+        var response = await _client.DeleteAsync($"/urlshortener/{alias}");
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
     }
