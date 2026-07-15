@@ -4,6 +4,7 @@ using Api.Data;
 using Api.Models;
 using Api.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OpenApi;
 
 namespace Api.Controllers;
 
@@ -11,11 +12,11 @@ namespace Api.Controllers;
 [Route("[controller]")]
 public partial class UrlShortenerController(IUrlRepository repository) : ControllerBase
 {
-    // POST /urlshortener/shorten
-    // 201: { shortUrl }
-    // 400: invalid input or alias already taken
+    /// <summary>Shorten a URL.</summary>
+    /// <remarks>Returns a shortened URL for the supplied full URL.</remarks>
     [HttpPost("shorten")]
     [Produces("application/json")]
+    [EndpointSummary("Shorten a URL")]
     [ProducesResponseType(typeof(ShortenResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Shorten([FromBody] ShortenRequest request)
@@ -54,10 +55,10 @@ public partial class UrlShortenerController(IUrlRepository repository) : Control
         return Created($"/{alias}", new ShortenResponse(shortUrl));
     }
 
-    // GET /urlshortener/{alias}
-    // 302: redirect to full URL
-    // 404: alias not found
+    /// <summary>Redirect to full URL.</summary>
+    /// <remarks>Returns a 302 redirect to the original URL for the supplied alias.</remarks>
     [HttpGet("{alias}")]
+    [EndpointSummary("Redirect to full URL")]
     [ProducesResponseType(StatusCodes.Status302Found)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RedirectToUrl(string alias)
@@ -71,10 +72,10 @@ public partial class UrlShortenerController(IUrlRepository repository) : Control
         return Redirect(url.FullUrl);
     }
 
-    // DELETE /urlshortener/{alias}
-    // 204: deleted
-    // 404: alias not found
+    /// <summary>Delete a shortened URL.</summary>
+    /// <remarks>Deletes the URL mapped to the supplied alias.</remarks>
     [HttpDelete("{alias}")]
+    [EndpointSummary("Delete a shortened URL")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(string alias)
@@ -94,10 +95,11 @@ public partial class UrlShortenerController(IUrlRepository repository) : Control
         return NoContent();
     }
 
-    // GET /urlshortener/urls
-    // 200: array of { alias, fullUrl, shortUrl }
+    /// <summary>List all shortened URLs.</summary>
+    /// <remarks>Returns every shortened URL stored in the database.</remarks>
     [HttpGet("urls")]
     [Produces("application/json")]
+    [EndpointSummary("List all shortened URLs")]
     [ProducesResponseType(typeof(IEnumerable<ShortenedUrlResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll()
     {

@@ -1,4 +1,5 @@
 using Api.Data;
+using Api.OpenApi;
 using Dapper;
 using DbUp;
 using Microsoft.Data.Sqlite;
@@ -26,7 +27,10 @@ var result = upgrader.PerformUpgrade();
 if (!result.Successful)
     throw new Exception("Database migration failed", result.Error);
 
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer<UrlShortenerDocumentTransformer>();
+});
 builder.Services.AddControllers();
 builder.Services.AddCors(options =>
 {
