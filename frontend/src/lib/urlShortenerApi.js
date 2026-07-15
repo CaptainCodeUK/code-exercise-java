@@ -1,5 +1,6 @@
 const DEFAULT_API_BASE_URL = 'https://localhost:7273'
 const SHORTEN_PATH = '/UrlShortener/shorten'
+const LIST_PATH = '/UrlShortener/urls'
 
 function getApiBaseUrl() {
   return import.meta.env.VITE_URL_SHORTENER_API_BASE_URL?.trim() || DEFAULT_API_BASE_URL
@@ -55,6 +56,28 @@ export async function shortenUrl({ fullUrl, customAlias }, { signal } = {}) {
   const payload = await response.json()
 
   if (!payload || typeof payload.shortUrl !== 'string') {
+    throw new Error('The API returned an unexpected response shape.')
+  }
+
+  return payload
+}
+
+export async function listShortenedUrls({ signal } = {}) {
+  const response = await fetch(`${getApiBaseUrl()}${LIST_PATH}`, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+    },
+    signal,
+  })
+
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response))
+  }
+
+  const payload = await response.json()
+
+  if (!Array.isArray(payload)) {
     throw new Error('The API returned an unexpected response shape.')
   }
 
