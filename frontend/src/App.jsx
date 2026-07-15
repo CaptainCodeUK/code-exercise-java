@@ -14,6 +14,7 @@ function App() {
   const pathname = window.location.pathname
   const [fullUrl, setFullUrl] = useState('')
   const [customAlias, setCustomAlias] = useState('')
+  const [isShortenerOpen, setIsShortenerOpen] = useState(false)
   const [shortUrl, setShortUrl] = useState('')
   const [status, setStatus] = useState('idle')
   const [error, setError] = useState('')
@@ -51,6 +52,28 @@ function App() {
 
     return () => window.clearTimeout(timeoutId)
   }, [copyState])
+
+  useEffect(() => {
+    if (!isShortenerOpen) {
+      return undefined
+    }
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    function handleKeyDown(event) {
+      if (event.key === 'Escape') {
+        setIsShortenerOpen(false)
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isShortenerOpen])
 
   useEffect(() => {
     if (!copiedRowUrl) {
@@ -297,50 +320,19 @@ function App() {
   }
 
   return (
-    <main className="min-vh-100 bg-body-tertiary">
+    <main className="min-vh-100 bg-body-tertiary position-relative">
       <div className="container py-4 py-lg-5">
-        <section className="row g-3 align-items-start align-items-lg-center mb-4">
-          <div className="col-12 col-lg-8">
+        <section className="d-flex flex-column flex-lg-row align-items-lg-end justify-content-between gap-3 mb-4">
+          <div>
             <span className="badge text-bg-secondary text-uppercase mb-2">URL shortener API caller</span>
-            <h1 className="display-5 fw-semibold mb-2">Shorten a link.</h1>
-            <p className="lead text-body-secondary mb-0">
-              Enter the original URL and, if needed, an optional custom alias.
-            </p>
+            <h1 className="display-5 fw-semibold mb-2">Saved aliases</h1>
+            <p className="lead text-body-secondary mb-0">Review existing shortened links and create a new alias when needed.</p>
           </div>
 
-          <div className="col-12 col-lg-4 text-lg-end">
-            <span
-              className={`badge rounded-pill text-bg-${statusVariants[status]} d-inline-flex align-items-center gap-2 px-3 py-2 fs-6`}
-              aria-live="polite"
-            >
-              {status === 'loading' ? <span className="spinner-border spinner-border-sm" aria-hidden="true" /> : null}
-              <span>{statusLabels[status]}</span>
-            </span>
-          </div>
+          <button type="button" className="btn btn-primary btn-lg" onClick={() => setIsShortenerOpen(true)}>
+            Create new alias
+          </button>
         </section>
-
-        <ShortenerPanel
-          status={status}
-          statusLabels={statusLabels}
-          statusVariants={statusVariants}
-          fullUrlValidationMessage={fullUrlValidationMessage}
-          fullUrl={fullUrl}
-          onFullUrlChange={setFullUrl}
-          customAlias={customAlias}
-          onCustomAliasChange={setCustomAlias}
-          onSubmit={handleSubmit}
-          onClear={() => {
-            setFullUrl('')
-            setCustomAlias('')
-            setShortUrl('')
-            setError('')
-            setStatus('idle')
-          }}
-          error={error}
-          shortUrl={shortUrl}
-          copyState={copyState}
-          onCopyShortUrl={handleCopy}
-        />
 
         <SavedUrlsList
           shortenedUrls={shortenedUrls}
@@ -352,6 +344,52 @@ function App() {
           onDeleteAlias={handleDeleteAlias}
         />
       </div>
+
+      {isShortenerOpen ? (
+        <div
+          className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center p-3"
+          style={{ zIndex: 1080 }}
+          onClick={() => setIsShortenerOpen(false)}
+          role="presentation"
+        >
+          <div className="position-absolute top-0 start-0 w-100 h-100 bg-dark bg-opacity-50" aria-hidden="true" />
+
+          <div
+            className="position-relative w-100"
+            style={{ maxWidth: '1120px' }}
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-alias-title"
+          >
+            <ShortenerPanel
+              status={status}
+              statusLabels={statusLabels}
+              statusVariants={statusVariants}
+              fullUrlValidationMessage={fullUrlValidationMessage}
+              fullUrl={fullUrl}
+              onFullUrlChange={setFullUrl}
+              customAlias={customAlias}
+              onCustomAliasChange={setCustomAlias}
+              onSubmit={handleSubmit}
+              onClear={() => {
+                setFullUrl('')
+                setCustomAlias('')
+                setShortUrl('')
+                setError('')
+                setStatus('idle')
+              }}
+              error={error}
+              shortUrl={shortUrl}
+              copyState={copyState}
+              onCopyShortUrl={handleCopy}
+              onClose={() => setIsShortenerOpen(false)}
+              className="mb-0 shadow-lg"
+              titleId="create-alias-title"
+            />
+          </div>
+        </div>
+      ) : null}
     </main>
   )
 }

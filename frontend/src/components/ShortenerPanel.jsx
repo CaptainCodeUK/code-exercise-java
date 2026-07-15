@@ -13,10 +13,28 @@ export default function ShortenerPanel({
   shortUrl,
   copyState,
   onCopyShortUrl,
+  onClose,
+  className = '',
+  titleId,
 }) {
   return (
-    <section className="card border-0 shadow-sm mb-4">
+    <section className={`card border-0 shadow-sm ${className}`.trim()} aria-labelledby={titleId}>
       <div className="card-body p-4 p-lg-5">
+        <div className="d-flex flex-column flex-sm-row justify-content-between align-items-start gap-3 mb-4">
+          <div>
+            <h2 id={titleId} className="h4 mb-1">
+              Create a new alias
+            </h2>
+            <p className="text-body-secondary mb-0">
+              Enter the original URL and an optional custom alias below.
+            </p>
+          </div>
+
+          {onClose ? (
+            <button type="button" className="btn-close" aria-label="Close alias composer" onClick={onClose} />
+          ) : null}
+        </div>
+
         <div className="row g-4">
           <div className="col-12 col-lg-7">
             <form onSubmit={onSubmit}>
