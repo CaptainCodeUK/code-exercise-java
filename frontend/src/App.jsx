@@ -1,8 +1,15 @@
 import { useEffect, useState } from 'react'
-import { deleteShortenedUrl, listShortenedUrls, shortenUrl } from './lib/urlShortenerApi'
+import {
+  deleteShortenedUrl,
+  findShortenedUrl,
+  getApiBaseUrl,
+  listShortenedUrls,
+  shortenUrl,
+} from './lib/urlShortenerApi'
 
 function App() {
   const fullUrlValidationMessage = 'Enter a full URL, including https://.'
+  const pathname = window.location.pathname
   const [fullUrl, setFullUrl] = useState('')
   const [customAlias, setCustomAlias] = useState('')
   const [shortUrl, setShortUrl] = useState('')
@@ -14,6 +21,8 @@ function App() {
   const [listStatus, setListStatus] = useState('loading')
   const [listError, setListError] = useState('')
   const [deletingAlias, setDeletingAlias] = useState('')
+  const [routeStatus, setRouteStatus] = useState('checking')
+  const [missingAlias, setMissingAlias] = useState('')
 
   const statusLabels = {
     idle: 'Ready',
@@ -54,6 +63,60 @@ function App() {
   }, [copiedRowUrl])
 
   useEffect(() => {
+    const normalizedPath = pathname.replace(/\/+$/, '') || '/'
+
+    if (normalizedPath === '/') {
+      setRouteStatus('home')
+      return undefined
+    }
+
+    const pathSegments = normalizedPath.split('/').filter(Boolean)
+
+    if (pathSegments.length !== 1) {
+      setMissingAlias(pathSegments.join('/'))
+      setRouteStatus('not-found')
+      return undefined
+    }
+
+    const alias = pathSegments[0]
+    const controller = new AbortController()
+
+    setRouteStatus('redirecting')
+    setMissingAlias('')
+
+    async function resolveAlias() {
+      try {
+        const shortenedUrl = await findShortenedUrl(alias, { signal: controller.signal })
+
+        if (!shortenedUrl) {
+          setMissingAlias(alias)
+          setRouteStatus('not-found')
+          return
+        }
+
+        window.location.replace(
+          `${getApiBaseUrl()}/UrlShortener/${encodeURIComponent(shortenedUrl.alias)}`,
+        )
+      } catch (resolveError) {
+        if (controller.signal.aborted) {
+          return
+        }
+
+        setMissingAlias(alias)
+        setRouteStatus('not-found')
+      }
+    }
+
+    resolveAlias()
+
+    return () => controller.abort()
+  }, [pathname])
+
+  useEffect(() => {
+    if (routeStatus !== 'home') {
+      return undefined
+    }
+
     const controller = new AbortController()
 
     async function loadShortenedUrls() {
@@ -79,7 +142,7 @@ function App() {
     loadShortenedUrls()
 
     return () => controller.abort()
-  }, [])
+  }, [routeStatus])
 
   async function refreshShortenedUrls() {
     const controller = new AbortController()
@@ -192,6 +255,43 @@ function App() {
     } finally {
       setDeletingAlias('')
     }
+  }
+
+  if (routeStatus === 'checking' || routeStatus === 'redirecting') {
+    return (
+      <main className="min-vh-100 bg-body-tertiary d-flex align-items-center justify-content-center">
+        <div className="text-center px-4">
+          <div className="spinner-border text-secondary mb-3" role="status" aria-hidden="true" />
+          <h1 className="h4 mb-2">Checking link...</h1>
+          <p className="text-body-secondary mb-0">Looking up the requested short URL.</p>
+        </div>
+      </main>
+    )
+  }
+
+  if (routeStatus === 'not-found') {
+    return (
+      <main className="min-vh-100 bg-body-tertiary d-flex align-items-center justify-content-center">
+        <section className="container py-5">
+          <div className="row justify-content-center">
+            <div className="col-12 col-md-8 col-lg-6">
+              <div className="card border-0 shadow-sm">
+                <div className="card-body p-4 p-lg-5 text-center">
+                  <span className="badge text-bg-danger text-uppercase mb-3">404 Not Found</span>
+                  <h1 className="display-6 fw-semibold mb-3">That short URL does not exist.</h1>
+                  <p className="text-body-secondary mb-4">
+                    We could not find a shortened link for {missingAlias ? <strong>/{missingAlias}</strong> : 'this path'}.
+                  </p>
+                  <a className="btn btn-primary btn-lg" href="/">
+                    Return to the home page
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    )
   }
 
   return (

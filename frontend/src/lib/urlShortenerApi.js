@@ -3,7 +3,7 @@ const SHORTEN_PATH = '/UrlShortener/shorten'
 const LIST_PATH = '/UrlShortener/urls'
 const DELETE_PATH_PREFIX = '/UrlShortener/'
 
-function getApiBaseUrl() {
+export function getApiBaseUrl() {
   return import.meta.env.VITE_URL_SHORTENER_API_BASE_URL?.trim() || DEFAULT_API_BASE_URL
 }
 
@@ -83,6 +83,18 @@ export async function listShortenedUrls({ signal } = {}) {
   }
 
   return payload
+}
+
+export async function findShortenedUrl(alias, { signal } = {}) {
+  const normalizedAlias = typeof alias === 'string' ? alias.trim() : ''
+
+  if (!normalizedAlias) {
+    throw new Error('An alias is required to look up a shortened URL.')
+  }
+
+  const urls = await listShortenedUrls({ signal })
+
+  return urls.find((entry) => entry?.alias === normalizedAlias) ?? null
 }
 
 export async function deleteShortenedUrl(alias, { signal } = {}) {
