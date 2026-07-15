@@ -1,6 +1,7 @@
 const DEFAULT_API_BASE_URL = 'https://localhost:7273'
 const SHORTEN_PATH = '/UrlShortener/shorten'
 const LIST_PATH = '/UrlShortener/urls'
+const DELETE_PATH_PREFIX = '/UrlShortener/'
 
 function getApiBaseUrl() {
   return import.meta.env.VITE_URL_SHORTENER_API_BASE_URL?.trim() || DEFAULT_API_BASE_URL
@@ -82,4 +83,24 @@ export async function listShortenedUrls({ signal } = {}) {
   }
 
   return payload
+}
+
+export async function deleteShortenedUrl(alias, { signal } = {}) {
+  const normalizedAlias = typeof alias === 'string' ? alias.trim() : ''
+
+  if (!normalizedAlias) {
+    throw new Error('An alias is required to delete a shortened URL.')
+  }
+
+  const response = await fetch(`${getApiBaseUrl()}${DELETE_PATH_PREFIX}${encodeURIComponent(normalizedAlias)}`, {
+    method: 'DELETE',
+    headers: {
+      Accept: 'application/json',
+    },
+    signal,
+  })
+
+  if (!response.ok) {
+    throw new Error(await readErrorMessage(response))
+  }
 }

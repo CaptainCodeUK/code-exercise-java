@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { listShortenedUrls, shortenUrl } from './lib/urlShortenerApi'
+import { deleteShortenedUrl, listShortenedUrls, shortenUrl } from './lib/urlShortenerApi'
 
 function App() {
   const fullUrlValidationMessage = 'Enter a full URL, including https://.'
@@ -13,6 +13,7 @@ function App() {
   const [shortenedUrls, setShortenedUrls] = useState([])
   const [listStatus, setListStatus] = useState('loading')
   const [listError, setListError] = useState('')
+  const [deletingAlias, setDeletingAlias] = useState('')
 
   const statusLabels = {
     idle: 'Ready',
@@ -162,6 +163,34 @@ function App() {
       setCopiedRowUrl(url)
     } catch {
       setCopiedRowUrl('')
+    }
+  }
+
+  async function handleDeleteAlias(alias) {
+    if (!alias || deletingAlias) {
+      return
+    }
+
+    const confirmed = window.confirm(`Delete alias /${alias}? This cannot be undone.`)
+
+    if (!confirmed) {
+      return
+    }
+
+    const controller = new AbortController()
+    setDeletingAlias(alias)
+    setListError('')
+
+    try {
+      await deleteShortenedUrl(alias, { signal: controller.signal })
+      await refreshShortenedUrls()
+    } catch (deleteError) {
+      setListStatus('error')
+      setListError(
+        deleteError instanceof Error ? deleteError.message : 'Unable to delete the selected alias right now.',
+      )
+    } finally {
+      setDeletingAlias('')
     }
   }
 
@@ -365,6 +394,16 @@ function App() {
                                 aria-label={copiedRowUrl === entry.shortUrl ? 'Copied to clipboard' : 'Copy short URL'}
                               >
                                 {copiedRowUrl === entry.shortUrl ? 'Copied' : 'Copy'}
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn-outline-danger btn-sm"
+                                onClick={() => handleDeleteAlias(entry.alias)}
+                                disabled={deletingAlias === entry.alias}
+                                title={deletingAlias === entry.alias ? 'Deleting alias' : `Delete alias /${entry.alias}`}
+                                aria-label={deletingAlias === entry.alias ? 'Deleting alias' : `Delete alias /${entry.alias}`}
+                              >
+                                {deletingAlias === entry.alias ? 'Deleting...' : 'Delete'}
                               </button>
                             </div>
                           </div>
