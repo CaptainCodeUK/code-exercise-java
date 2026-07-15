@@ -7,8 +7,14 @@ namespace Api.Tests.Integration;
 public class ListUrlsTests(TestWebApplicationFactory factory)
     : IClassFixture<TestWebApplicationFactory>
 {
-    private readonly HttpClient _client = factory.CreateClient(
-        new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+    private readonly HttpClient _client = CreateClient(factory);
+
+    private static HttpClient CreateClient(TestWebApplicationFactory factory)
+    {
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        client.DefaultRequestHeaders.Add("Origin", "https://app.local");
+        return client;
+    }
 
     // GET /urls → 200 with array
     [Fact]
@@ -44,6 +50,7 @@ public class ListUrlsTests(TestWebApplicationFactory factory)
         var entry = Array.Find(body, e => e.Alias == alias);
         Assert.NotNull(entry);
         Assert.Equal(fullUrl, entry.FullUrl);
+        Assert.StartsWith("https://app.local/", entry.ShortUrl);
         Assert.Contains(alias, entry.ShortUrl);
     }
 

@@ -23,6 +23,8 @@ public class UrlShortenerControllerTests
                 Request = { Scheme = "https", Host = new HostString("short.ly") }
             }
         };
+
+        _sut.HttpContext!.Request.Headers["Origin"] = "https://short.ly";
     }
 
     // --- POST /shorten ---
@@ -44,6 +46,7 @@ public class UrlShortenerControllerTests
             ?? created.Value?.GetType().GetProperty("ShortUrl")?.GetValue(created.Value) as string;
 
         Assert.False(string.IsNullOrWhiteSpace(shortUrl));
+        Assert.StartsWith("https://short.ly/", shortUrl);
         Assert.NotEqual(request.FullUrl, shortUrl);
     }
 
@@ -64,6 +67,7 @@ public class UrlShortenerControllerTests
             ?? created.Value?.GetType().GetProperty("ShortUrl")?.GetValue(created.Value) as string;
 
         Assert.False(string.IsNullOrWhiteSpace(shortUrl));
+        Assert.StartsWith("https://short.ly/", shortUrl);
         Assert.Contains("my-alias", shortUrl);
         Assert.NotEqual(request.FullUrl, shortUrl);
     }
@@ -143,11 +147,11 @@ public class UrlShortenerControllerTests
     [Fact]
     public async Task GetAll_Returns200WithList()
     {
-        _repo.GetAllAsync().Returns(new List<ShortenedUrlResponse>
+        _repo.GetAllAsync().Returns(new List<ShortenedUrl>
         {
-            new() { Alias = "a", FullUrl = "https://example.com/very/long/url/a", ShortUrl = "https://short.ly/a" },
-            new() { Alias = "b", FullUrl = "https://example.com/very/long/url/b", ShortUrl = "https://short.ly/b" },
-            new() { Alias = "c", FullUrl = "https://example.com/very/long/url/c", ShortUrl = "https://short.ly/c" }
+            new() { Alias = "a", FullUrl = "https://example.com/very/long/url/a" },
+            new() { Alias = "b", FullUrl = "https://example.com/very/long/url/b" },
+            new() { Alias = "c", FullUrl = "https://example.com/very/long/url/c" }
         });
 
         var result = await _sut.GetAll();

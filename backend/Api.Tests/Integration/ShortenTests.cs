@@ -7,8 +7,14 @@ namespace Api.Tests.Integration;
 public class ShortenTests(TestWebApplicationFactory factory)
     : IClassFixture<TestWebApplicationFactory>
 {
-    private readonly HttpClient _client = factory.CreateClient(
-        new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+    private readonly HttpClient _client = CreateClient(factory);
+
+    private static HttpClient CreateClient(TestWebApplicationFactory factory)
+    {
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });
+        client.DefaultRequestHeaders.Add("Origin", "https://app.local");
+        return client;
+    }
 
     private static string NewAlias(string prefix) => $"{prefix}-{Guid.NewGuid():N}";
 
@@ -26,6 +32,7 @@ public class ShortenTests(TestWebApplicationFactory factory)
         var body = await response.Content.ReadFromJsonAsync<ShortenResponse>();
         Assert.NotNull(body?.ShortUrl);
         Assert.False(string.IsNullOrWhiteSpace(body.ShortUrl));
+        Assert.StartsWith("https://app.local/", body.ShortUrl);
     }
 
     // POST /shorten — with customAlias → 201, shortUrl contains alias
@@ -44,6 +51,7 @@ public class ShortenTests(TestWebApplicationFactory factory)
 
         var body = await response.Content.ReadFromJsonAsync<ShortenResponse>();
         Assert.NotNull(body?.ShortUrl);
+        Assert.StartsWith("https://app.local/", body.ShortUrl);
         Assert.Contains(alias, body.ShortUrl);
     }
 

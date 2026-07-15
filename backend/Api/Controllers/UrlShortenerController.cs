@@ -12,6 +12,21 @@ namespace Api.Controllers;
 [Route("[controller]")]
 public partial class UrlShortenerController(IUrlRepository repository) : ControllerBase
 {
+    private string GetCallerBaseUrl()
+    {
+        var origin = Request?.Headers["Origin"].ToString();
+
+        if (Uri.TryCreate(origin, UriKind.Absolute, out var originUri))
+        {
+            return $"{originUri.Scheme}://{originUri.Authority}".TrimEnd('/');
+        }
+
+        var request = HttpContext?.Request;
+        return request is null
+            ? string.Empty
+            : $"{request.Scheme}://{request.Host}{request.PathBase}".TrimEnd('/');
+    }
+
     /// <summary>Shorten a URL.</summary>
     /// <remarks>Returns a shortened URL for the supplied full URL.</remarks>
     [HttpPost("shorten")]
@@ -39,11 +54,10 @@ public partial class UrlShortenerController(IUrlRepository repository) : Control
             ? await AliasGenerator.GenerateUniqueRandomAliasAsync(repository.AliasExistsAsync, 8)
             : alias;
 
-        // If we're calling from a frontend, we will return the full URL including the domain
-        // Otherwise, we'll just return the alias
-        var shortUrl = Request is null
+        var baseUrl = GetCallerBaseUrl();
+        var shortUrl = string.IsNullOrWhiteSpace(baseUrl)
             ? $"/{alias}"
-            : $"{Request.Scheme}://{Request.Host}{Request.PathBase}/{alias}";
+            : $"{baseUrl}/{alias}";
 
         // Save the alias and URL to the repository
         await repository.AddAsync(new ShortenedUrl
@@ -103,10 +117,7 @@ public partial class UrlShortenerController(IUrlRepository repository) : Control
     [ProducesResponseType(typeof(IEnumerable<ShortenedUrlResponse>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll()
     {
-        var request = HttpContext?.Request;
-        var shortUrlPrefix = request is null
-            ? string.Empty
-            : $"{request.Scheme}://{request.Host}{request.PathBase}".TrimEnd('/');
+        var shortUrlPrefix = GetCallerBaseUrl();
 
         var urls = (await repository.GetAllAsync())
             .Select(url => new ShortenedUrlResponse
