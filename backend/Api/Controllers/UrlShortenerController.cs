@@ -10,6 +10,13 @@ namespace Api.Controllers;
 [Route("")]
 public partial class UrlShortenerController(IUrlRepository repository) : ControllerBase
 {
+    // Literal route segments ("/shorten", "/urls") would otherwise be shadowed by GET/DELETE {alias}.
+    private static readonly HashSet<string> ReservedAliases = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "shorten",
+        "urls"
+    };
+
     private string GetCallerBaseUrl()
     {
         var origin = Request?.Headers["Origin"].ToString();
@@ -48,7 +55,8 @@ public partial class UrlShortenerController(IUrlRepository repository) : Control
             return BadRequest("Invalid input or alias already taken");
         }
 
-        if (!string.IsNullOrWhiteSpace(alias) && await repository.AliasExistsAsync(alias))
+        if (!string.IsNullOrWhiteSpace(alias)
+            && (ReservedAliases.Contains(alias) || await repository.AliasExistsAsync(alias)))
         {
             return BadRequest("Invalid input or alias already taken");
         }

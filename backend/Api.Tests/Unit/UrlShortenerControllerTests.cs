@@ -90,6 +90,20 @@ public class UrlShortenerControllerTests
         Assert.IsType<BadRequestObjectResult>(result);
     }
 
+    [Theory]
+    [InlineData("urls")]
+    [InlineData("shorten")]
+    [InlineData("URLS")]
+    public async Task Shorten_ReservedAlias_Returns400(string alias)
+    {
+        _repo.AliasExistsAsync(Arg.Any<string>()).Returns(false);
+
+        var result = await _sut.Shorten(new ShortenRequest("https://example.com/this/is/long", alias));
+
+        Assert.IsType<BadRequestObjectResult>(result);
+        await _repo.DidNotReceive().AddAsync(Arg.Any<ShortenedUrl>());
+    }
+
     // --- GET /{alias} ---
 
     [Fact]

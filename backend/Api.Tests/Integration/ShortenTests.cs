@@ -109,5 +109,40 @@ public class ShortenTests(TestWebApplicationFactory factory)
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    // POST /shorten — reserved alias (would shadow /urls or /shorten) → 400
+    [Theory]
+    [InlineData("urls")]
+    [InlineData("shorten")]
+    [InlineData("URLS")]
+    public async Task PostShorten_ReservedAlias_Returns400(string alias)
+    {
+        var response = await _client.PostAsJsonAsync("/shorten", new
+        {
+            fullUrl = "https://example.com/very/long/url",
+            customAlias = alias
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    // POST /shorten — reserved alias never persisted, GET /urls unaffected
+    [Fact]
+    public async Task PostShorten_ReservedAlias_DoesNotAppearInList()
+    {
+        await _client.PostAsJsonAsync("/shorten", new
+        {
+            fullUrl = "https://example.com/very/long/url",
+            customAlias = "urls"
+        });
+
+        var response = await _client.GetAsync("/urls");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<UrlEntry[]>();
+        Assert.DoesNotContain(body!, e => e.Alias == "urls");
+    }
+
+    private record UrlEntry(string Alias, string FullUrl, string ShortUrl);
+
     private record ShortenResponse(string ShortUrl);
 }
