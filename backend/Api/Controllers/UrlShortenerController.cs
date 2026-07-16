@@ -119,11 +119,8 @@ public partial class UrlShortenerController(IUrlRepository repository) : Control
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(string alias)
     {
-        if (string.IsNullOrWhiteSpace(alias) || !await repository.AliasExistsAsync(alias))
-        {
-            return NotFound();
-        }
-
+        // DELETE's affected-row count is already the atomic source of truth — a separate
+        // exists-then-delete check would just reopen the same race the insert path had.
         var deleted = await repository.DeleteAsync(alias.Trim());
 
         if (!deleted)

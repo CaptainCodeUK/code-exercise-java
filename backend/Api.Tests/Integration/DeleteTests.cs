@@ -34,4 +34,23 @@ public class DeleteTests(TestWebApplicationFactory factory)
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
+
+    // DELETE /{alias} — two concurrent deletes of the same alias → exactly one 204, one 404
+    [Fact]
+    public async Task DeleteAlias_ConcurrentSameAlias_OnlyOneSucceeds()
+    {
+        var alias = $"delete-race-{Guid.NewGuid():N}";
+        await _client.PostAsJsonAsync("/shorten", new
+        {
+            fullUrl = "https://example.com/to-delete-race",
+            customAlias = alias
+        });
+
+        var responses = await Task.WhenAll(
+            _client.DeleteAsync($"/{alias}"),
+            _client.DeleteAsync($"/{alias}"));
+
+        Assert.Single(responses, r => r.StatusCode == HttpStatusCode.NoContent);
+        Assert.Single(responses, r => r.StatusCode == HttpStatusCode.NotFound);
+    }
 }
