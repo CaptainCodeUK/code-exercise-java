@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-using System.Text.RegularExpressions;
 using Api.Data;
 using Api.Models;
 using Api.Services;
@@ -9,7 +7,7 @@ using Microsoft.AspNetCore.OpenApi;
 namespace Api.Controllers;
 
 [ApiController]
-[Route("[controller]")]
+[Route("")]
 public partial class UrlShortenerController(IUrlRepository repository) : ControllerBase
 {
     private string GetCallerBaseUrl()
@@ -36,7 +34,6 @@ public partial class UrlShortenerController(IUrlRepository repository) : Control
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Shorten([FromBody] ShortenRequest request)
     {
-        // Validate input
         if (request is null || string.IsNullOrWhiteSpace(request.FullUrl))
         {
             return BadRequest("Invalid input or alias already taken");
@@ -44,6 +41,18 @@ public partial class UrlShortenerController(IUrlRepository repository) : Control
 
         var fullUrl = request.FullUrl?.Trim();
         var alias = request.CustomAlias?.Trim();
+
+        if (!Uri.TryCreate(fullUrl, UriKind.Absolute, out var parsedFullUrl)
+            || (parsedFullUrl.Scheme != Uri.UriSchemeHttp && parsedFullUrl.Scheme != Uri.UriSchemeHttps))
+        {
+            return BadRequest("Invalid input or alias already taken");
+        }
+
+        if (!string.IsNullOrWhiteSpace(alias)
+            && !alias.All(character => char.IsLetterOrDigit(character) || character == '-'))
+        {
+            return BadRequest("Invalid input or alias already taken");
+        }
 
         if (!string.IsNullOrWhiteSpace(alias) && await repository.AliasExistsAsync(alias))
         {
@@ -63,7 +72,7 @@ public partial class UrlShortenerController(IUrlRepository repository) : Control
         await repository.AddAsync(new ShortenedUrl
         {
             Alias = alias,
-            FullUrl = fullUrl!
+            FullUrl = parsedFullUrl.ToString()
         });
 
         return Created($"/{alias}", new ShortenResponse(shortUrl));

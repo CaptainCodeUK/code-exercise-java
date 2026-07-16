@@ -22,7 +22,7 @@ public class ShortenTests(TestWebApplicationFactory factory)
     [Fact]
     public async Task PostShorten_ValidUrl_Returns201WithShortUrl()
     {
-        var response = await _client.PostAsJsonAsync("/urlshortener/shorten", new
+        var response = await _client.PostAsJsonAsync("/shorten", new
         {
             fullUrl = "https://example.com/very/long/url"
         });
@@ -41,7 +41,7 @@ public class ShortenTests(TestWebApplicationFactory factory)
     {
         var alias = NewAlias("my-custom-alias");
 
-        var response = await _client.PostAsJsonAsync("/urlshortener/shorten", new
+        var response = await _client.PostAsJsonAsync("/shorten", new
         {
             fullUrl = "https://example.com/very/long/url",
             customAlias = alias
@@ -62,8 +62,8 @@ public class ShortenTests(TestWebApplicationFactory factory)
         var alias = "duplicate-alias";
         var payload = new { fullUrl = "https://example.com/url", customAlias = alias };
 
-        await _client.PostAsJsonAsync("/urlshortener/shorten", payload);
-        var response = await _client.PostAsJsonAsync("/urlshortener/shorten", payload);
+        await _client.PostAsJsonAsync("/shorten", payload);
+        var response = await _client.PostAsJsonAsync("/shorten", payload);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
@@ -72,7 +72,19 @@ public class ShortenTests(TestWebApplicationFactory factory)
     [Fact]
     public async Task PostShorten_MissingFullUrl_Returns400()
     {
-        var response = await _client.PostAsJsonAsync("/urlshortener/shorten", new { });
+        var response = await _client.PostAsJsonAsync("/shorten", new { });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    // POST /shorten — invalid fullUrl → 400
+    [Fact]
+    public async Task PostShorten_InvalidFullUrl_Returns400()
+    {
+        var response = await _client.PostAsJsonAsync("/shorten", new
+        {
+            fullUrl = "not-a-url"
+        });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }

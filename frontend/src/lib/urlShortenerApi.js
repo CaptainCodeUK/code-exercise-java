@@ -1,7 +1,7 @@
 const DEFAULT_API_BASE_URL = 'https://localhost:7273'
-const SHORTEN_PATH = '/UrlShortener/shorten'
-const LIST_PATH = '/UrlShortener/urls'
-const DELETE_PATH_PREFIX = '/UrlShortener/'
+const SHORTEN_PATH = '/shorten'
+const LIST_PATH = '/urls'
+const DELETE_PATH_PREFIX = '/'
 
 export function getApiBaseUrl() {
   return import.meta.env.VITE_URL_SHORTENER_API_BASE_URL?.trim() || DEFAULT_API_BASE_URL

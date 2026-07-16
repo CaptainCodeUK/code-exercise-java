@@ -1,7 +1,7 @@
 @Api_HostAddress = https://localhost:7273
 
 ### Shorten a URL (no custom alias)
-POST {{Api_HostAddress}}/urlshortener/shorten
+POST {{Api_HostAddress}}/shorten
 Content-Type: application/json
 
 {
@@ -11,7 +11,7 @@ Content-Type: application/json
 ###
 
 ### Shorten a URL (with custom alias)
-POST {{Api_HostAddress}}/urlshortener/shorten
+POST {{Api_HostAddress}}/shorten
 Content-Type: application/json
 
 {
@@ -22,17 +22,17 @@ Content-Type: application/json
 ###
 
 ### Redirect to full URL
-GET {{Api_HostAddress}}/urlshortener/my-custom-alias
+GET {{Api_HostAddress}}/my-custom-alias
 
 ###
 
 ### Delete a shortened URL
-DELETE {{Api_HostAddress}}/urlshortener/my-custom-alias
+DELETE {{Api_HostAddress}}/my-custom-alias
 
 ###
 
 ### List all shortened URLs
-GET {{Api_HostAddress}}/urlshortener/urls
+GET {{Api_HostAddress}}/urls
 Accept: application/json
 
 ###

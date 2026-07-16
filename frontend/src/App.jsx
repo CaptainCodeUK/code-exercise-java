@@ -180,9 +180,7 @@ function App() {
           return
         }
 
-        window.location.replace(
-          `${getApiBaseUrl()}/UrlShortener/${encodeURIComponent(shortenedUrl.alias)}`,
-        )
+        window.location.replace(`${getApiBaseUrl()}/${encodeURIComponent(shortenedUrl.alias)}`)
       } catch (resolveError) {
         if (controller.signal.aborted) {
           return

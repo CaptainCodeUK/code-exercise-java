@@ -15,13 +15,13 @@ public class RedirectTests(TestWebApplicationFactory factory)
     public async Task GetAlias_ExistingAlias_Returns302()
     {
         var alias = "redirect-alias";
-        await _client.PostAsJsonAsync("/urlshortener/shorten", new
+        await _client.PostAsJsonAsync("/shorten", new
         {
             fullUrl = "https://example.com/target",
             customAlias = alias
         });
 
-        var response = await _client.GetAsync($"/urlshortener/{alias}");
+        var response = await _client.GetAsync($"/{alias}");
 
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.Equal("https://example.com/target", response.Headers.Location?.ToString());

@@ -154,15 +154,15 @@ Open the frontend at http://localhost:8080.
 
 The API exposes these endpoints:
 
-- POST /UrlShortener/shorten
-- GET /UrlShortener/urls
-- GET /UrlShortener/{alias}
-- DELETE /UrlShortener/{alias}
+- POST /shorten
+- GET /urls
+- GET /{alias}
+- DELETE /{alias}
 
 Example request when running locally:
 
 ```bash
-curl -k https://localhost:7273/UrlShortener/shorten \
+curl -k https://localhost:7273/shorten \
   -H "Content-Type: application/json" \
   -d '{"fullUrl":"https://example.com/article","customAlias":"launch-notes"}'
 ```
@@ -170,7 +170,7 @@ curl -k https://localhost:7273/UrlShortener/shorten \
 Example request when running in Docker:
 
 ```bash
-curl http://localhost:8081/UrlShortener/shorten \
+curl http://localhost:8081/shorten \
   -H "Content-Type: application/json" \
   -d '{"fullUrl":"https://example.com/article","customAlias":"launch-notes"}'
 ```
