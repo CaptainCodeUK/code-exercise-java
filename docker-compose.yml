@@ -1,0 +1,25 @@
+services:
+  api:
+    image: url-shortener-api
+    build:
+      context: ./backend/Api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+    volumes:
+      - api-data:/data
+    ports:
+      - "8081:8080"
+
+  frontend:
+    image: url-shortener-frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_URL_SHORTENER_API_BASE_URL: http://localhost:8081
+    depends_on:
+      - api
+    ports:
+      - "8080:80"
+
+volumes:
+  api-data:
