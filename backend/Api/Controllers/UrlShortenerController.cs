@@ -48,12 +48,6 @@ public partial class UrlShortenerController(IUrlRepository repository) : Control
             return BadRequest("Invalid input or alias already taken");
         }
 
-        if (!string.IsNullOrWhiteSpace(alias)
-            && !alias.All(character => char.IsLetterOrDigit(character) || character == '-'))
-        {
-            return BadRequest("Invalid input or alias already taken");
-        }
-
         if (!string.IsNullOrWhiteSpace(alias) && await repository.AliasExistsAsync(alias))
         {
             return BadRequest("Invalid input or alias already taken");

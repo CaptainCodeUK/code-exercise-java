@@ -55,6 +55,26 @@ public class ShortenTests(TestWebApplicationFactory factory)
         Assert.Contains(alias, body.ShortUrl);
     }
 
+    // POST /shorten — with punctuation in customAlias → 201, shortUrl contains alias
+    [Fact]
+    public async Task PostShorten_WithPunctuationAlias_Returns201ContainingAlias()
+    {
+        var alias = "launch.notes_2026";
+
+        var response = await _client.PostAsJsonAsync("/shorten", new
+        {
+            fullUrl = "https://example.com/very/long/url",
+            customAlias = alias
+        });
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+        var body = await response.Content.ReadFromJsonAsync<ShortenResponse>();
+        Assert.NotNull(body?.ShortUrl);
+        Assert.StartsWith("https://app.local/", body.ShortUrl);
+        Assert.Contains(alias, body.ShortUrl);
+    }
+
     // POST /shorten — duplicate alias → 400
     [Fact]
     public async Task PostShorten_DuplicateAlias_Returns400()
