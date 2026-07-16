@@ -80,6 +80,31 @@ npm run dev
 
 The frontend talks to the API at https://localhost:7273 by default.
 
+## Running Tests
+
+### API Tests
+
+In Visual Studio, open [backend/Api.Tests/Api.Tests.csproj](backend/Api.Tests/Api.Tests.csproj) and run the tests from the Test Explorer.
+
+From the command line, run:
+
+```bash
+dotnet test backend/Api.Tests/Api.Tests.csproj
+```
+
+This runs both the unit tests (`Api.Tests/Unit`) and the integration tests (`Api.Tests/Integration`, which spin up the API in-memory against a temporary SQLite database).
+
+### Frontend Tests
+
+From the frontend folder:
+
+```bash
+cd frontend
+npm test
+```
+
+This runs the Vitest suite once and exits. For watch mode during development, run `npx vitest` instead.
+
 ## Docker
 
 ### API only
