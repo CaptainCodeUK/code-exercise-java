@@ -61,21 +61,35 @@ public partial class UrlShortenerController(IUrlRepository repository) : Control
             return BadRequest("Invalid input or alias already taken");
         }
 
-        alias = string.IsNullOrWhiteSpace(alias)
-            ? await AliasGenerator.GenerateUniqueRandomAliasAsync(repository.AliasExistsAsync, 8)
-            : alias;
+        var isCustomAlias = !string.IsNullOrWhiteSpace(alias);
+        bool inserted;
+
+        // The DB insert is the source of truth for uniqueness — the checks above are only a fast-path
+        // for a clear error message. A concurrent request can still slip past them. A custom alias
+        // conflict is reported to the caller; a generated alias conflict is retried until it lands on
+        // one that's free, since there's no one to report a random-generation failure to.
+        if (isCustomAlias)
+        {
+            inserted = await repository.AddAsync(new ShortenedUrl { Alias = alias!, FullUrl = parsedFullUrl.ToString() });
+
+            if (!inserted)
+            {
+                return BadRequest("Invalid input or alias already taken");
+            }
+        }
+        else
+        {
+            do
+            {
+                alias = await AliasGenerator.GenerateUniqueRandomAliasAsync(repository.AliasExistsAsync, 8);
+                inserted = await repository.AddAsync(new ShortenedUrl { Alias = alias, FullUrl = parsedFullUrl.ToString() });
+            } while (!inserted);
+        }
 
         var baseUrl = GetCallerBaseUrl();
         var shortUrl = string.IsNullOrWhiteSpace(baseUrl)
             ? $"/{alias}"
             : $"{baseUrl}/{alias}";
-
-        // Save the alias and URL to the repository
-        await repository.AddAsync(new ShortenedUrl
-        {
-            Alias = alias,
-            FullUrl = parsedFullUrl.ToString()
-        });
 
         return Created($"/{alias}", new ShortenResponse(shortUrl));
     }

@@ -33,6 +33,7 @@ public class UrlShortenerControllerTests
     public async Task Shorten_ValidUrl_Returns201WithShortUrl()
     {
         _repo.AliasExistsAsync(Arg.Any<string>()).Returns(false);
+        _repo.AddAsync(Arg.Any<ShortenedUrl>()).Returns(true);
 
         var request = new ShortenRequest("https://example.com/this/is/long", null);
 
@@ -54,6 +55,7 @@ public class UrlShortenerControllerTests
     public async Task Shorten_WithCustomAlias_ShortUrlContainsAlias()
     {
         _repo.AliasExistsAsync(Arg.Any<string>()).Returns(false);
+        _repo.AddAsync(Arg.Any<ShortenedUrl>()).Returns(true);
 
         var request = new ShortenRequest("https://example.com/this/is/long", "my-alias");
 
@@ -102,6 +104,47 @@ public class UrlShortenerControllerTests
 
         Assert.IsType<BadRequestObjectResult>(result);
         await _repo.DidNotReceive().AddAsync(Arg.Any<ShortenedUrl>());
+    }
+
+    // Simulates the race: the existence pre-check passes (alias free at that instant), but a
+    // concurrent request wins the insert first, so the DB rejects this one on the primary key.
+    [Fact]
+    public async Task Shorten_CustomAliasWinsInsertRace_Returns400()
+    {
+        _repo.AliasExistsAsync("taken-by-racer").Returns(false);
+        _repo.AddAsync(Arg.Any<ShortenedUrl>()).Returns(false);
+
+        var result = await _sut.Shorten(new ShortenRequest("https://example.com/this/is/long", "taken-by-racer"));
+
+        Assert.IsType<BadRequestObjectResult>(result);
+        await _repo.Received(1).AddAsync(Arg.Any<ShortenedUrl>());
+    }
+
+    // A generated alias colliding with a concurrent insert should be retried, not surfaced as an error.
+    [Fact]
+    public async Task Shorten_GeneratedAliasCollidesOnce_RetriesAndReturns201()
+    {
+        _repo.AliasExistsAsync(Arg.Any<string>()).Returns(false);
+        _repo.AddAsync(Arg.Any<ShortenedUrl>()).Returns(false, true);
+
+        var result = await _sut.Shorten(new ShortenRequest("https://example.com/this/is/long", null));
+
+        Assert.IsType<CreatedResult>(result);
+        await _repo.Received(2).AddAsync(Arg.Any<ShortenedUrl>());
+    }
+
+    // Retries are unbounded — no cap, no failure response, since there's no caller to report
+    // a "ran out of attempts" error to. Keep retrying until a free alias is found.
+    [Fact]
+    public async Task Shorten_GeneratedAliasCollidesRepeatedly_KeepsRetryingUntil201()
+    {
+        _repo.AliasExistsAsync(Arg.Any<string>()).Returns(false);
+        _repo.AddAsync(Arg.Any<ShortenedUrl>()).Returns(false, false, false, false, true);
+
+        var result = await _sut.Shorten(new ShortenRequest("https://example.com/this/is/long", null));
+
+        Assert.IsType<CreatedResult>(result);
+        await _repo.Received(5).AddAsync(Arg.Any<ShortenedUrl>());
     }
 
     // --- GET /{alias} ---

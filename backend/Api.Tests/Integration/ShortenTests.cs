@@ -142,6 +142,25 @@ public class ShortenTests(TestWebApplicationFactory factory)
         Assert.DoesNotContain(body!, e => e.Alias == "urls");
     }
 
+    // POST /shorten — two concurrent requests for the same customAlias → exactly one 201, one 400
+    [Fact]
+    public async Task PostShorten_ConcurrentSameCustomAlias_OnlyOneSucceeds()
+    {
+        var alias = NewAlias("race");
+        var payload = new { fullUrl = "https://example.com/race", customAlias = alias };
+
+        var responses = await Task.WhenAll(
+            _client.PostAsJsonAsync("/shorten", payload),
+            _client.PostAsJsonAsync("/shorten", payload));
+
+        Assert.Single(responses, r => r.StatusCode == HttpStatusCode.Created);
+        Assert.Single(responses, r => r.StatusCode == HttpStatusCode.BadRequest);
+
+        var listResponse = await _client.GetAsync("/urls");
+        var body = await listResponse.Content.ReadFromJsonAsync<UrlEntry[]>();
+        Assert.Single(body!, e => e.Alias == alias);
+    }
+
     private record UrlEntry(string Alias, string FullUrl, string ShortUrl);
 
     private record ShortenResponse(string ShortUrl);

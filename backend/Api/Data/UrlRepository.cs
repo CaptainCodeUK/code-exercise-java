@@ -8,12 +8,21 @@ public class UrlRepository(string connectionString) : IUrlRepository
 {
     private SqliteConnection Connect() => new(connectionString);
 
-    public async Task AddAsync(ShortenedUrl url)
+    public async Task<bool> AddAsync(ShortenedUrl url)
     {
         using var conn = Connect();
-        await conn.ExecuteAsync(
-            "INSERT INTO urls (alias, full_url) VALUES (@Alias, @FullUrl)",
-            url);
+
+        try
+        {
+            await conn.ExecuteAsync(
+                "INSERT INTO urls (alias, full_url) VALUES (@Alias, @FullUrl)",
+                url);
+            return true;
+        }
+        catch (SqliteException ex) when (ex.SqliteErrorCode == 19) // SQLITE_CONSTRAINT — alias primary key already exists
+        {
+            return false;
+        }
     }
 
     public async Task<bool> AliasExistsAsync(string alias)
